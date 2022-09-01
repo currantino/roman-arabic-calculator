@@ -1,89 +1,180 @@
 package org.cyrex;
 
-class Calculator {
-    final static int[] val = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
-    final static String[] rom = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
+import java.util.Locale;
+import java.util.Scanner;
 
-    public static String calc(String input) {
-        int firstNumber;
-        String operator;
-        int secondNumber;
-        String firstOperand;
-        String secondOperand;
-        String[] splitInput = input.split(" ");
-        if (splitInput.length != 3) throw new RuntimeException("Invalid expression for calculation");
-        firstOperand = splitInput[0];
-        operator = splitInput[1];
-        secondOperand = splitInput[2];
-        if (firstOperand.matches("^[MDCLXVI]+$") && secondOperand.matches("^[MDCLXVI]+$")) {
-            firstNumber = romanToInt(firstOperand);
-            secondNumber = romanToInt(secondOperand);
-            int result = calcArabic(firstNumber, operator, secondNumber);
-            if (result <= 0) {
-                throw new RuntimeException("Roman numbers can't be negative or zero");
-            } else {
-                return intToRoman(result);
-            }
-        } else try {
-            firstNumber = Integer.parseInt(firstOperand);
-            secondNumber = Integer.parseInt(secondOperand);
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("Both numbers should be arabic or roman");
+/**
+ * Метод умеет выполнять операции сложения, вычитания, умножения и деления с двумя числами: a + b, a - b, a * b, a / b. Данные передаются в одну строку (смотрите пример)! Решения, в которых каждое число и арифмитеческая операция передаются с новой строки считаются неверными.
+ * Метод умеет работать как с арабскими (1,2,3,4,5…), так и с римскими (I,II,III,IV,V…) числами.
+ * Метод должен принимать на вход числа от 1 до 10 включительно, не более. На выходе числа не ограничиваются по величине и могут быть любыми.
+ * Метод умеет работать только с целыми числами.
+ * Метод умеет работать только с арабскими или римскими цифрами одновременно, при вводе пользователем строки вроде 3 + II метод должен выбросить исключение и прекратить свою работу.
+ * При вводе римских чисел, ответ должен быть выведен римскими цифрами, соответственно, при вводе арабских - ответ ожидается арабскими.
+ * При вводе пользователем неподходящих чисел метдод выбрасывает исключение и завершает свою работу.
+ * При вводе пользователем строки, не соответствующей одной из вышеописанных арифметических операций, метод выбрасывает исключение и завершает свою работу
+ * Результатом операции деления является целое число, остаток отбрасывается.
+ * Результатом работы метода с арабскими числами могут быть отрицательные числа и ноль. Результатом работы метода с римскими числами могут быть только положительные числа, если результат работы меньше единицы, выбрасывается исключение
+ */
+
+
+public class Calculator {
+    public static void main(String[] args) throws Exception {
+        while (true) {
+            CalculatorHelper calculatorHelper = new CalculatorHelper();
+            System.out.print("Введите выражение: ");
+            Scanner scanner = new Scanner(System.in); //Scanner myObj = new Scanner(System.in);
+            String input = scanner.nextLine();        //String input = myObj.nextLine();
+            System.out.println("Ответ: " + calculatorHelper.calc(input));
         }
-        return String.valueOf(calcArabic(firstNumber, operator, secondNumber));
     }
+}
 
-    private static int calcArabic(int firstNumber, String operator, int secondNumber) {
-        int result;
-        if ((firstNumber < 0 || firstNumber > 10) || (secondNumber < 0 || secondNumber > 10)) {
-            throw new RuntimeException("Numbers should not be greater than 10");
+class CalculatorHelper {
+    public String calc(String input) throws Exception {
+        String[] splitText = input.split(" ");
+        boolean isRomanNumeral = false; //Boolean rome = false;
+        int num1, num2; //int letter1, letter2;
+        String operation;
+
+        int countNumbers = 0; //int countLetters;
+
+        for (int i = 0; i < splitText.length; i += 2) {
+            try {
+                Integer.parseInt(splitText[i]);
+            } catch (NumberFormatException e) {
+                isRomanNumeral = true;
+            } finally {
+                countNumbers++;  //emptyLine
+            }
+        }
+
+
+        if (countNumbers != 2) throw new Exception("В выражении должно быть 2 числа");
+        // if (countLetters == 1) throw new Exception("letter format do not consist");
+
+        num1 = getInteger(splitText[0]);
+        operation = splitText[1];//emptyLine
+        num2 = getInteger(splitText[2]);
+        int result = getResult(num1, num2, operation);
+        String output;
+
+
+        //if (result > 10 || result <= 0) throw new Exception("Arab letter result should be between 0 and 10");
+
+        if (isRomanNumeral) {
+            if (result <= 0) throw new Exception("В римской системе счисления нет отрицательных чисел и нуля");
+            else output = getRomeNumber(result);
         } else {
-            switch (operator) {
-                case "+" -> {
-                    result = firstNumber + secondNumber;
-                }
-                case "-" -> {
-                    result = firstNumber - secondNumber;
-                }
-                case "*" -> {
-                    result = firstNumber * secondNumber;
-                }
-                case "/" -> {
-                    result = firstNumber / secondNumber;
-                }
-                default -> {
-                    throw new RuntimeException("Invalid operator");
-                }
-            }
-            return result;
+            output = String.valueOf(result);
         }
+        return output;
     }
 
-    public static int romanToInt(String s) {
-        int ans = 0, num = 0;
-        for (int i = s.length()-1; i >= 0; i--) {
-            switch (s.charAt(i)) {
-                case 'I' -> num = 1;
-                case 'V' -> num = 5;
-                case 'X' -> num = 10;
-                case 'L' -> num = 50;
-                case 'C' -> num = 100;
-                case 'D' -> num = 500;
-                case 'M' -> num = 1000;
+    //    public Integer getLetter(String letter) throws Exception {
+    public int getInteger(String input) throws Exception {
+        int integer;
+
+        try {
+            integer = Integer.parseInt(input);
+        } catch (Exception e) {
+            switch (input.toLowerCase(Locale.ROOT)) {
+                case "i":
+                    integer = 1;
+                    break;
+                case "ii":
+                    integer = 2;
+                    break;
+                case "iii":
+                    integer = 3;
+                    break;
+                case "iv":
+                    integer = 4;
+                    break;
+                case "v":
+                    integer = 5;
+                    break;
+                case "vi":
+                    integer = 6;
+                    break;
+                case "vii":
+                    integer = 7;
+                    break;
+                case "viii":
+                    integer = 8;
+                    break;
+                case "ix":
+                    integer = 9;
+                    break;
+                case "x":
+                    integer = 10;
+                    break;
+                default:
+                    throw new Exception("Введенное римское число больше 10");
+//                    throw new Exception("Arab letter > 10");
             }
-            if (4 * num < ans) ans -= num;
-            else ans += num;
         }
-        return ans;
+        if (integer > 10) throw new Exception("Введенное арабское число > 10"); //emptyLin
+        return integer;
     }
 
-    public static String intToRoman(int num) {
-        StringBuilder ans = new StringBuilder();
-        for (int i = 0; num > 0; i++)
-            while (num >= val[i]) {
-                ans.append(rom[i]);
-                num -= val[i];
-            }
-        return ans.toString();
+    public String getRomeNumber(int num) throws Exception {
+        String romeNum;
+        switch (num) {
+            case 1:
+                romeNum = "I";
+                break;
+            case 2:
+                romeNum = "II";
+                break;
+            case 3:
+                romeNum = "III";
+                break;
+            case 4:
+                romeNum = "IV";
+                break;
+            case 5:
+                romeNum = "V";
+                break;
+            case 6:
+                romeNum = "VI";
+                break;
+            case 7:
+                romeNum = "VII";
+                break;
+            case 8:
+                romeNum = "VIII";
+                break;
+            case 9:
+                romeNum = "IX";
+                break;
+            case 10:
+                romeNum = "X";
+                break;
+            default:
+                throw new Exception("The result > 10");
+        }
+        return romeNum;
+    }
+
+    public Integer getResult(int letter1, int letter2, String s) throws Exception {
+        int result;
+        switch (s) {
+            case "/":
+                result = letter1 / letter2;
+                break;
+            case "+":
+                result = letter1 + letter2;
+                break;
+            case "-":
+                result = letter1 - letter2;
+                break;
+            case "*":
+                result = letter1 * letter2;
+                break;
+            default:
+                throw new Exception("Wrong operation format");
+        }
+
+        return result;
     }
 }
